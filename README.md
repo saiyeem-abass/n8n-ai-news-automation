@@ -25,7 +25,7 @@ This project is an automated AI News Digest workflow built using n8n. It fetches
 4. Send an email digest automatically.
 
 ## Files
-- AI News Digest Assistent  – Exported n8n workflow
+- AI News Digest Assistant  – Exported n8n workflow
 - `README.md` – Project documentation
 
 ## Author
