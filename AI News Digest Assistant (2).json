@@ -1,0 +1,369 @@
+{
+  "name": "AI News Digest Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/category/artificial-intelligence/feed/ ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        -48
+      ],
+      "id": "f97e9aae-bcb8-4d2f-9740-153169674264",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1SDvTYjCaKpbBJdMmqTctFoTgPtYMpu6jBriM4kD_3y4",
+          "mode": "list",
+          "cachedResultName": "AI News Digest",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SDvTYjCaKpbBJdMmqTctFoTgPtYMpu6jBriM4kD_3y4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SDvTYjCaKpbBJdMmqTctFoTgPtYMpu6jBriM4kD_3y4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Title ": "={{$node[\"RSS Read\"].json[\"title\"]}}",
+            "Summary ": "={{$json.summary}}",
+            "Date ": "={{$node[\"RSS Read\"].json[\"isoDate\"]}}",
+            "Category ": "={{$json.category}}",
+            "Link ": "={{$node[\"RSS Read\"].json[\"link\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Title ",
+              "displayName": "Title ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary ",
+              "displayName": "Summary ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category ",
+              "displayName": "Category ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link ",
+              "displayName": "Link ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date ",
+              "displayName": "Date ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        352,
+        160
+      ],
+      "id": "eb8651a4-4bb6-4acc-8ffb-d3c33614841c",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "akX5wd9slRSNIFV4",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "maxItems": 2
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        64,
+        64
+      ],
+      "id": "8f000b9b-c316-48b5-ab80-00ea6f9b86fa",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\n\nreturn items.filter(item => {\n  const title = item.json.title;\n\n  if (seen.has(title)) {\n    return false;\n  }\n\n  seen.add(title);\n  return true;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        192
+      ],
+      "id": "96ae4a39-d747-47ad-baea-8cb932e62b65",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(item => {\n  const text =\n    (item.json.title || '') + ' ' +\n    (item.json.contentSnippet || '');\n\n  const keywords = [\n    'ai',\n    'artificial intelligence',\n    'openai',\n    'gemini',\n    'anthropic',\n    'startup',\n    'funding',\n    'research',\n    'security',\n    'llm'\n  ];\n\n  return keywords.some(keyword =>\n    text.toLowerCase().includes(keyword)\n  );\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        64
+      ],
+      "id": "742ea4ca-bd39-437b-bb3f-5d0bf1a3483b",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -608,
+        -48
+      ],
+      "id": "4ea7634f-da8d-4345-a0ac-f194105942bb",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const text = $json.content.parts[0].text;\n\nconst data = JSON.parse(text);\n\nreturn {\n  json: {\n    category: data.category,\n    summary: data.summary\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -48
+      ],
+      "id": "fdbac7b3-9131-4f7d-865e-93297b2f1005",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "url": "https://www.theverge.com/rss/index.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        -528,
+        208
+      ],
+      "id": "3bec47e0-9426-46ff-8516-e3c96b432d19",
+      "name": "RSS Read1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -336,
+        192
+      ],
+      "id": "9cb09f51-1075-44ac-a10d-b3d2839b07aa",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI News Assistant specializing in technology and AI news.\n\nRead the article below and return ONLY valid JSON.\n\nRequirements:\n- Categorize the article.\n- Generate a concise summary (2-3 sentences).\n- Do not include markdown.\n- Do not include explanations.\n\nOutput format:\n\n{\n  \"category\": \"AI\",\n  \"summary\": \"...\"\n}\n\nArticle Title:\n{{ $json.title }}\n\nArticle Content:\n{{ $json.contentSnippet }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        -48
+      ],
+      "id": "9d6ce734-f0f0-447f-966a-da2d2758c914",
+      "name": "AI Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "FVcdJ00kkENi3QO8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "AI Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Read1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "d0415f70-3151-47ad-a655-a15b8ee098d3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "51513c8d61c2b76c0d8d678b6a41e6311438161fdc2cf75d79f78ef0ac6d0127"
+  },
+  "nodeGroups": [],
+  "id": "Hb0gZfaMC4iQsYPL",
+  "tags": []
+}
